@@ -1,0 +1,72 @@
+version: "3.5"
+
+services:
+  # Install ElasticSearch
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.1
+    environment:
+      - discovery.type=single-node
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.5.1
+    environment:
+      - elasticsearch.url= http://localhost:9200
+    ports:
+      - 5601:5601
+
+#debezium
+  zookeeper:
+      image: debezium/zookeeper:1.0
+      hostname: zookeeper
+      container_name: zookeeper
+      ports:
+        - 2181:2181
+        - 2888:2888
+      environment:
+        ZOOKEEPER_CLIENT_PORT: 2181
+        ZOOKEEPER_TICK_TIME: 2000
+  kafka:
+      image: debezium/kafka:1.0
+      ports:
+        - 9092:9092
+      links:
+        - zookeeper
+      environment:
+        - ZOOKEEPER_CONNECT=zookeeper:2181
+        - ADVERTISED_HOST_NAME=192.168.0.146
+        # If we wanted to connect to Kafka from outside of a Docker container, then we’d want Kafka to advertise its address via the Docker host,
+        # which we could do by adding -e ADVERTISED_HOST_NAME= followed by the IP address or resolvable hostname of the Docker host,
+        # which on Linux or Docker on Mac this is the IP address of the host computer (not localhost).
+
+
+  schema-registry:
+      image: confluentinc/cp-schema-registry
+      ports:
+        - 8181:8181
+        - 8081:8081
+      environment:
+        - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:2181
+        - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+        - SCHEMA_REGISTRY_LISTENERS=http://schema-registry:8081
+      links:
+        - zookeeper
+  connect:
+    image: debezium/connect:1.0
+    ports:
+      - 8083:8083
+    links:
+      - kafka
+      - schema-registry
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+      - INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
