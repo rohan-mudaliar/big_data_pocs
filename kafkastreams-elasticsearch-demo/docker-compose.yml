@@ -38,7 +38,7 @@ services:
         - zookeeper
       environment:
         - ZOOKEEPER_CONNECT=zookeeper:2181
-        - ADVERTISED_HOST_NAME=192.168.0.146
+        - ADVERTISED_HOST_NAME=192.168.0.223
         # If we wanted to connect to Kafka from outside of a Docker container, then we’d want Kafka to advertise its address via the Docker host,
         # which we could do by adding -e ADVERTISED_HOST_NAME= followed by the IP address or resolvable hostname of the Docker host,
         # which on Linux or Docker on Mac this is the IP address of the host computer (not localhost).

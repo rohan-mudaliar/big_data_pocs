@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.streaming.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,5 +9,4 @@ public class KafkastreamsElasticsearchDemoApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(KafkastreamsElasticsearchDemoApplication.class, args);
 	}
-
 }
