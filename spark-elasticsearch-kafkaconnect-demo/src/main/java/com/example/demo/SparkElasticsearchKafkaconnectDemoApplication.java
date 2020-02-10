@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CreditcardFraudDetectionApplication {
+public class SparkElasticsearchKafkaconnectDemoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(CreditcardFraudDetectionApplication.class, args);
+		SpringApplication.run(SparkElasticsearchKafkaconnectDemoApplication.class, args);
 	}
 
 }

@@ -38,11 +38,12 @@ public class ElasticSearchServiceImpl {
 	public void pushToEs(String tableName, Map<String, Object> payloadMap) throws IOException {
 		log.info("Pushing to table {} with payload: {}", tableName, payloadMap);
 		// this should only be used for creates
-		String id = (String) payloadMap.get("id");
-		Map<String, Object> indexMap = wmsOutBoundReportDAO.getIndexById(id, ElasticSearchTopics.OURBOUND_REPORT_TOPIC+ "_es");
-		if(indexMap==null) {
-			wmsOutBoundReportDAO.insertIndex(tableName, payloadMap,id);
+		String id = (String) payloadMap.get("orderId");
+		boolean checkIfIndexExists = wmsOutBoundReportDAO.checkIfIndexExists(ElasticSearchTopics.OURBOUND_REPORT_TOPIC+ "_es");
+		if(!checkIfIndexExists) {
+				wmsOutBoundReportDAO.insertIndex(tableName, payloadMap,id);
 		}
+		
 	}
 
 	/**

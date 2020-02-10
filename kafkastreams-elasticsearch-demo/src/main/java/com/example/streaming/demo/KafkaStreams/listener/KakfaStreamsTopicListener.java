@@ -11,6 +11,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.example.streaming.demo.ElasticSearchConsumer.service.ElasticSearchServiceImpl;
 import com.example.streaming.demo.KafkaStreams.listener.constants.OutBoundConstants;
@@ -69,7 +70,7 @@ public class KakfaStreamsTopicListener {
 		KStream<String, String> orderMap = orderItemStream.map((key, value) -> {
 			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value);
 			String keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
-					OutBoundConstants.WMS_ITEM_TYPE);
+					OutBoundConstants.ORDER_ID);
 			return new KeyValue<>(keyToUse, afterObject.toJSONString());
 		});
 		//for each record we update the corresponding indices in elastic search

@@ -11,6 +11,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.springframework.stereotype.Repository;
 
@@ -84,5 +85,17 @@ public class OrderReportDAO {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public boolean checkIfIndexExists(String orderOrderItemEvent) {
+		GetIndexRequest request = new GetIndexRequest(orderOrderItemEvent);
+		boolean exists = false;
+		try {
+			 exists = restHighLevelClient.indices().exists(request, RequestOptions.DEFAULT);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return exists;
 	}
 }
