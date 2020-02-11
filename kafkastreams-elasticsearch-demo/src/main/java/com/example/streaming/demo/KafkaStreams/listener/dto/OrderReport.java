@@ -24,5 +24,9 @@ public class OrderReport {
 	private String orderCost;
 	@Field(type = FieldType.Text)
 	private String shipmentCost;
+	@Field(type = FieldType.Text)
+	private String itemDescription;
+	@Field(type = FieldType.Text)
+	private String customerAddress;
 	
 }

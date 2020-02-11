@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author rohan
  *
  */
-//@Component
+@Component
 @Slf4j
 public class KakfaStreamsTopicListener {
 
@@ -59,21 +59,30 @@ public class KakfaStreamsTopicListener {
 	}
 
 	/***
-	 * The below method is used to listen to wms_order_item events and update the corresponding indexes
+	 * The below method is used to listen to wms_order_item events and update the
+	 * corresponding indexes
 	 */
 	public void wmsUpdates() {
 		log.info("Entering KafkaStreamsListener:constructOutBoundReport");
-		Properties props = kafkaConfig.populateKafkConfigMap();
+		Properties props = kafkaConfig.populateKafkConfigMap("new-app2");
 		final StreamsBuilder stremBuilder = new StreamsBuilder();
 		KStream<String, String> orderItemStream = stremBuilder.stream(wmsTopic);
-		//we listen to the incoming stream and transform it to a new stream with the key as order_item Id and value as json input
+		// we listen to the incoming stream and transform it to a new stream with the
+		// key as order_item Id and value as json input
 		KStream<String, String> orderMap = orderItemStream.map((key, value) -> {
-			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value);
-			String keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
-					OutBoundConstants.ORDER_ID);
+			String keyToUse = null;
+			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,
+					OutBoundConstants.AFTER);
+			JSONObject beforeObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,
+					OutBoundConstants.BEFORE);
+			if (beforeObject != null) {
+				keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
+						OutBoundConstants.ORDER_ID);
+			}
 			return new KeyValue<>(keyToUse, afterObject.toJSONString());
 		});
-		//for each record we update the corresponding indices in elastic search
+		// for each record we update the corresponding indices in elastic search
+
 		orderMap.foreach((key, value) -> {
 			elasticSearchServiceImpl.updateIndexForWmsEvent(key, value);
 		});
@@ -83,21 +92,29 @@ public class KakfaStreamsTopicListener {
 	}
 
 	/***
-	 * The below method is used to listen to order_order_item events and update the corresponding indexes
+	 * The below method is used to listen to order_order_item events and update the
+	 * corresponding indexes
 	 */
 	public void orderServiceUpdates() {
 		log.info("Entering KafkaStreamsListener:constructOutBoundReport");
-		Properties props = kafkaConfig.populateKafkConfigMap();
+		Properties props = kafkaConfig.populateKafkConfigMap("new-app3");
 		final StreamsBuilder stremBuilder = new StreamsBuilder();
-		KStream<String, String> orderItemStream = stremBuilder.stream(logisticsTopic);
-		//we listen to the incoming stream and transform it to a new stream with the key as order_item Id and value as json input
+		KStream<String, String> orderItemStream = stremBuilder.stream(orderTopic);
+		// we listen to the incoming stream and transform it to a new stream with the
+		// key as order_item Id and value as json input
 		KStream<String, String> orderMap = orderItemStream.map((key, value) -> {
-			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value);
-			String keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
-					OutBoundConstants.WMS_ITEM_TYPE);
+			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,
+					OutBoundConstants.AFTER);
+			JSONObject beforeObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,
+					OutBoundConstants.BEFORE);
+			String keyToUse = null;
+			if (beforeObject != null) {
+				keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
+						OutBoundConstants.ORDER_ID);
+			}
 			return new KeyValue<>(keyToUse, afterObject.toJSONString());
 		});
-		//for each record we update the corresponding indices in elastic search
+		// for each record we update the corresponding indices in elastic search
 		orderMap.foreach((key, value) -> {
 			elasticSearchServiceImpl.updateIndexForOrderEvent(key, value);
 		});
@@ -108,19 +125,25 @@ public class KakfaStreamsTopicListener {
 
 	public void logisticsServiceUpdates() {
 		log.info("Entering KafkaStreamsListener:constructOutBoundReport");
-		Properties props = kafkaConfig.populateKafkConfigMap();
+		Properties props = kafkaConfig.populateKafkConfigMap("new-app4");
 		final StreamsBuilder stremBuilder = new StreamsBuilder();
 		KStream<String, String> orderItemStream = stremBuilder.stream(logisticsTopic);
-		//we listen to the incoming stream and transform it to a new stream with the key as order_item Id and value as json input
+		// we listen to the incoming stream and transform it to a new stream with the
+		// key as order_item Id and value as json input
 		KStream<String, String> orderMap = orderItemStream.map((key, value) -> {
-			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value);
-			String keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
-					OutBoundConstants.WMS_ITEM_TYPE);
+			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,
+					OutBoundConstants.AFTER);
+			JSONObject beforeObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,
+					OutBoundConstants.BEFORE);
+			String keyToUse = null;
+			if (beforeObject != null) {
+				keyToUse =kafkaStreamsListenerOperationsHelperService.setValue(afterObject, OutBoundConstants.ORDER_ID);
+			}
 			return new KeyValue<>(keyToUse, afterObject.toJSONString());
 		});
-		//for each record we update the corresponding indices in elastic search
+		// for each record we update the corresponding indices in elastic search
 		orderMap.foreach((key, value) -> {
-			elasticSearchServiceImpl.updateIndexForOrderEvent(key, value);
+			elasticSearchServiceImpl.updateIndexForLogisticsEvent(key, value);
 		});
 		final KafkaStreams streams = new KafkaStreams(stremBuilder.build(), props);
 		streams.start();

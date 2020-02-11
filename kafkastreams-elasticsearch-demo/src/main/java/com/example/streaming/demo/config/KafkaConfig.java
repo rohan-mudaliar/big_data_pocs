@@ -12,9 +12,9 @@ public class KafkaConfig {
 	
 	@Value("${kafka.bootstrap.servers}")
 	private String KafkabootStrapServer;
-	public  Properties populateKafkConfigMap() {
+	public  Properties populateKafkConfigMap(String appId) {
 		Properties props = new Properties();
-		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "new-test-application1");
+		props.put(StreamsConfig.APPLICATION_ID_CONFIG, appId);
 		// "192.168.0.241:9092"
 		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, KafkabootStrapServer);
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());

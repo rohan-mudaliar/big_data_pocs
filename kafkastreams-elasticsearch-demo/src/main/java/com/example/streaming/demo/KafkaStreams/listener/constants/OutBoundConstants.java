@@ -14,6 +14,13 @@ public static final String ORDER_ORDER_ITEM_TRANSACTION_TYPE="fulfillment_type";
 public static final String QTY="item_qty";
 public static final String PAYLOAD = "payload";
 public static final String AFTER = "after";
+public static final String BEFORE="before";
 public static final String WAREHOUSE_ID="id";
-public static final String WMS_ORDER_ITEM_EVENT = "WMS_ORDER_ITEM_EVENT";
+public static final String WMS_EVENT = "WMS_EVENT";
+public static final String ORDER_EVENT = "ORDER_EVENT";
+public static final String LOGISTICS_EVENT="LOGISTICS_EVENT";
+public static final String COURIER="courier";
+public static final String ORDER_DESCRIPTION="order_description";
+public static final String CUSTOMER_ADDRESS="customer_address";
+
 }

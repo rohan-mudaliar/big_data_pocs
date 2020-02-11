@@ -83,6 +83,8 @@ public class KafkaStreamsListenerOperationsHelperService {
 		orderReport.setQuantity(Integer.parseInt(setValue(wmsRecord, OutBoundConstants.QTY)));
 		orderReport.setShipmentId(setValue(wmsRecord, OutBoundConstants.SHIPMENT_ID));
 		orderReport.setShipmentPartner(setValue(wmsRecord, OutBoundConstants.SHIPMENT_PARTNER));
+		orderReport.setItemDescription(setValue(orderRecord, OutBoundConstants.ORDER_DESCRIPTION));
+		orderReport.setCustomerAddress(setValue(orderRecord, OutBoundConstants.CUSTOMER_ADDRESS));
 		log.info("Entering KafkaStreamsListener:populatePickListOrderItems");
 		return orderReport;
 	}
@@ -119,11 +121,11 @@ public class KafkaStreamsListenerOperationsHelperService {
 	 * @param value
 	 * @return
 	 */
-	public JSONObject fetchDto(String value) {
+	public JSONObject fetchDto(String value,String objectType) {
 		//log.info("Entering KafkaStreamsListener:fetchDto");
 		JSONObject json = extractJson(value);
 		JSONObject object = (JSONObject) json.get(OutBoundConstants.PAYLOAD);
-		JSONObject afterObject = (JSONObject) object.get(OutBoundConstants.AFTER);
+		JSONObject afterObject = (JSONObject) object.get(objectType);
 		//log.info("Entering KafkaStreamsListener:fetchDto");
 		return afterObject;
 	}
