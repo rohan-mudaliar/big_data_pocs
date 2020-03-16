@@ -3,7 +3,6 @@ package com.example.streaming.demo.KafkaStreams.listener;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -11,8 +10,8 @@ import javax.annotation.PreDestroy;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,7 +74,8 @@ public class KafkaStreamsAggregator {
 	 * WMS.Manifest to create an aggregated stream
 	 */
 	public void constructOrUpdateOutBoundReport() {
-		log.info("Entering KafkaStreamsListener:constructOutBoundReport");		boolean checkIfIndexExists = elasticSearchService
+		log.info("Entering KafkaStreamsListener:constructOutBoundReport");		
+		boolean checkIfIndexExists = elasticSearchService
 				.checkIfIndexExists(ElasticSearchTopics.OURBOUND_REPORT_TOPIC + "_es");
 		// the below is used to listen to streams for the required tables for
 		// aggregation
@@ -83,11 +83,11 @@ public class KafkaStreamsAggregator {
 
 		Properties props = kafkaConfig.populateKafkConfigMap("new-app1");
 		final StreamsBuilder stremBuilder = new StreamsBuilder();
-		KStream<String, String> orderItemStream = stremBuilder.stream(orderTopic);
-		KStream<String, String> wmsStream = stremBuilder.stream(wmsTopic);
-		KStream<String, String> shipmentStream = stremBuilder.stream(logisticsTopic);
+		KTable<String, String> orderKTable = stremBuilder.table(orderTopic);
+		KTable<String, String> wmsKTable = stremBuilder.table(wmsTopic);
+		KTable<String, String> shipmentKtable = stremBuilder.table(logisticsTopic);
 		if (!checkIfIndexExists) {
-			constructOutBoundReport(orderItemStream, wmsStream, shipmentStream);
+			constructOutBoundReport(orderKTable, wmsKTable, shipmentKtable);
 		} 
 		final KafkaStreams streams = new KafkaStreams(stremBuilder.build(), props);
 		streams.start();
@@ -96,59 +96,90 @@ public class KafkaStreamsAggregator {
 	}
 
 
-	private void constructOutBoundReport(KStream<String, String> orderItemStream, KStream<String, String> wmsStream,
-			KStream<String, String> shipmentStream) {
+	private void constructOutBoundReport(KTable<String, String> orderKTable, KTable<String, String> wmsKTable,
+			KTable<String, String> shipmentKtable) {
 		// the input streams needs to be transformed to a consumable format. here we are
 		// setting key as shipment_id and value as order item object
-		KStream<String, String> orderMap = orderItemStream.map((key, value) -> {
+		KTable<String, String> orderMap = orderKTable.groupBy((key, value)->{
 			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,OutBoundConstants.AFTER);
 			String keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
 					OutBoundConstants.ORDER_ID);
 			return new KeyValue<>(keyToUse, afterObject.toJSONString());
-		});
-
+		}).aggregate(
+		        // Initiate the aggregate value
+		        () -> null,
+		        // adder (doing nothing, just passing the user through as the value)
+		        (applicationId, user, aggValue) -> user,
+		        // subtractor (doing nothing, just passing the user through as the value)
+		        (applicationId, user, aggValue) -> user
+		);
 		// we are setting the key as order Item Id and value as Order.OrderItem
-		KStream<String, String> wmstopicMap = wmsStream.map((key, value) -> {
+		KTable<String, String> wmstopicMap = wmsKTable.groupBy((key, value)->{
 			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,OutBoundConstants.AFTER);
 			String keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
 					OutBoundConstants.ORDER_ID);
 			return new KeyValue<>(keyToUse, afterObject.toJSONString());
-		});
+		}).aggregate(
+		        // Initiate the aggregate value
+		        () -> null,
+		        // adder (doing nothing, just passing the user through as the value)
+		        (applicationId, user, aggValue) -> user,
+		        // subtractor (doing nothing, just passing the user through as the value)
+		        (applicationId, user, aggValue) -> user
+		);
+		
 
 		// here we are setting key as shipment_id and value as shipment object
-		KStream<String, String> shipmentMap = shipmentStream.map((key, value) -> {
+		KTable<String, String> shipmentMap = shipmentKtable.groupBy((key, value)->{
 			JSONObject afterObject = kafkaStreamsListenerOperationsHelperService.fetchDto(value,OutBoundConstants.AFTER);
 			String keyToUse = kafkaStreamsListenerOperationsHelperService.setValue(afterObject,
 					OutBoundConstants.LOGISTICS_ID);
 			return new KeyValue<>(keyToUse, afterObject.toJSONString());
-		});
+		}).aggregate(
+		        // Initiate the aggregate value
+		        () -> null,
+		        // adder (doing nothing, just passing the user through as the value)
+		        (applicationId, user, aggValue) -> user,
+		        // subtractor (doing nothing, just passing the user through as the value)
+		        (applicationId, user, aggValue) -> user
+		);
 //		
 
 		// we first perform a join on wms.order item and wms.shipment on shipment Id and
 		// transform the strem to have ordeItemId as key
-		KStream<String, String> mergedStream = orderMap
+		KTable<String, String> mergedStream = orderMap
 				.join(wmstopicMap, (leftValue, rightValue) -> kafkaStreamsListenerOperationsHelperService
-						.assignValues(leftValue, rightValue), JoinWindows.of(TimeUnit.MINUTES.toMillis(5)))
-				.map((key, value) -> {
-					OrderReport orderReport = null;
-					try {
-						orderReport = new ObjectMapper().readValue(value.toString(), OrderReport.class);
-					} catch (JsonMappingException e1) {
-						e1.printStackTrace();
-					} catch (JsonProcessingException e1) {
-						e1.printStackTrace();
-					}
-					String keyToUse = orderReport.getShipmentId();
-					String finalString = kafkaStreamsListenerOperationsHelperService.convertJsontoString(orderReport);
-					return new KeyValue<>(keyToUse, finalString);
-				});
+						.assignValues(leftValue, rightValue))
+					.groupBy((key, value)->{
+					return createOrderWmsStream(value);
+				}).aggregate(
+				        // Initiate the aggregate value
+				        () -> null,
+				        // adder (doing nothing, just passing the user through as the value)
+				        (applicationId, user, aggValue) -> user,
+				        // subtractor (doing nothing, just passing the user through as the value)
+				        (applicationId, user, aggValue) -> user
+				);
 //		
 		// we now join the aggregated table from previous step and Order.Order item
 		// table on the Order_item Id
-		KStream<String, String> finalStream = mergedStream.join(shipmentMap, (leftValue,
-				rightValue) -> kafkaStreamsListenerOperationsHelperService.apendValues(leftValue, rightValue),
-				JoinWindows.of(TimeUnit.MINUTES.toMillis(5)));
-		callEsAndCreateIndex(finalStream);
+		KTable<String, String> finalStream = mergedStream.join(shipmentMap, (leftValue,
+				rightValue) -> kafkaStreamsListenerOperationsHelperService.apendValues(leftValue, rightValue));
+		callEsAndCreateIndex(finalStream.toStream());
+	}
+
+	private KeyValue<String, String> createOrderWmsStream(String value) {
+		OrderReport orderReport = null;
+		try {
+			orderReport = new ObjectMapper().readValue(value.toString(), OrderReport.class);
+		} catch (JsonMappingException e1) {
+			e1.printStackTrace();
+		} catch (JsonProcessingException e1) {
+			e1.printStackTrace();
+		}
+		String keyToUse = orderReport.getShipmentId();
+		String finalString = kafkaStreamsListenerOperationsHelperService.convertJsontoString(orderReport);
+		return new KeyValue<>(keyToUse, finalString);
 	}
 
 	/**
