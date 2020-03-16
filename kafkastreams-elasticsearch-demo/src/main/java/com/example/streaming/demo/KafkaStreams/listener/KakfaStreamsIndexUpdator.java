@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Component
 @Slf4j
-public class KakfaStreamsTopicListener {
+public class KakfaStreamsIndexUpdator {
 
 	/**
 	 * the below are the list of topics which we listen to and update individual indexes

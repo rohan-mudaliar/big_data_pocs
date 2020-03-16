@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class KafkaStreamsAggregator {
+public class KafkaStreamsIndexCreator {
 
 	@Autowired
 	KafkaStreamsListenerOperationsHelperService kafkaStreamsListenerOperationsHelperService;
