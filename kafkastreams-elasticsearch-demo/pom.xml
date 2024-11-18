@@ -15,7 +15,7 @@
 	<description>kakfa-streams-elasticsearch-demo</description>
 		<properties>
 		<java.version>1.8</java.version>
-		<debezium.version>1.0.0.Final</debezium.version>
+		<debezium.version>2.3.0.Final</debezium.version>
 	</properties>
 
 
